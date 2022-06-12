@@ -104,9 +104,9 @@ contract Voting is Ownable {
             revert("This voter already exists");
         }
         voters.push(Voter(_name, _address, false, false, 0));
-        addVoterToWhiteList(_address);
         mappingVotersExists[_address] = true;
         mappingVotersId[_address] = voters.length - 1;
+        addVoterToWhiteList(_address);
         emit VoterRegistered(_address);
     }
 
