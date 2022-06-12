@@ -1,3 +1,4 @@
+//Admin.sol
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
@@ -52,7 +53,7 @@ contract Voting is Ownable {
     }
 
     modifier onlyWhitelistedVoter{
-        require(whitelist[msg.sender], "You must be whitelisted by an administrator before!");
+        require(whitelist[msg.sender], "You need to be whitelisted to do this action!");
         _;
     }
 
@@ -97,20 +98,20 @@ contract Voting is Ownable {
         session = session + 1;
     }
 
-    //Je laisse n'importe qui candidater, mais seul l'owner peut whitelister
-    function addVoter(string calldata _name, address _address) external {
+    function addVoter(string calldata _name, address _address) external onlyOwner{
         require(currentState == WorkflowStatus.RegisteringVoters, "Current State must be RegisteringVoters");
         if (mappingVotersExists[_address]) {
             revert("This voter already exists");
         }
         voters.push(Voter(_name, _address, false, false, 0));
+        addVoterToWhiteList(_address);
         mappingVotersExists[_address] = true;
         mappingVotersId[_address] = voters.length - 1;
         emit VoterRegistered(_address);
     }
 
     //L'administrateur peut récupérer un candidat pour l'ajouter à la whitelist
-    function addVoterToWhiteList(address _address) external onlyOwner {
+    function addVoterToWhiteList(address _address) public onlyOwner {
         require(currentState == WorkflowStatus.RegisteringVoters, "Current State must be RegisteringVoters");
         if (!mappingVotersExists[_address]) {
             revert("You need to add the voter with addVoter() first in order to add it to the whitelist");
