@@ -52,7 +52,7 @@ contract Voting is Ownable {
     }
 
     modifier onlyWhitelistedVoter{
-        require(whitelist[msg.sender], "You don't have permission to vote!");
+        require(whitelist[msg.sender], "You must be whitelisted by an administrator before!");
         _;
     }
 
