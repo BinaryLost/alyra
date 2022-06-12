@@ -161,35 +161,20 @@ contract Voting is Ownable {
         emit Voted(msg.sender, _proposalId);
     }
 
-    //Changer explicitement le statut
-    function changeStatus(uint _numStatus) public onlyOwner sessionOngoing {
-        if(uint(currentState) == _numStatus){
-            revert(string.concat("You requested the same status as the current one"));
-        }
-        if (uint(_numStatus) > getCountWorkflowStatus() - 1) {
-            revert("This status does not exist");
-        }
-        emit WorkflowStatusChange(currentState, WorkflowStatus(_numStatus));
-        currentState = WorkflowStatus(_numStatus);
-        //Compter les votes automatiquement à la fin de la session de votes puis bloquer le statut au statut final
-        if(currentState == WorkflowStatus.VotingSessionEnded){
-            setWinningProposalId();
-            changeStatus(uint (WorkflowStatus.VotesTallied));
-        }
-    }
-
     //ATTENTION: Arrivé au statut final, j'ai bloqué la possibilité de revenir en arrière, startNewSession() pour recommencer
     //Incrémenter le statut
-    function processForward() external onlyOwner sessionOngoing {
+    function processForward() public onlyOwner sessionOngoing {
         if (uint(currentState) >= getCountWorkflowStatus() - 1) {
             revert("You're already to the last step");
+        }
+        if (proposals.length == 0 && currentState == WorkflowStatus.ProposalsRegistrationStarted) {
+            revert("Please add a proposal before going to the next step");
         }
         emit WorkflowStatusChange(currentState, WorkflowStatus(uint(currentState) + 1));
         currentState = WorkflowStatus(uint(currentState) + 1);
         //Compter les votes automatiquement à la fin de la session de votes puis bloquer le statut au statut final
         if(currentState == WorkflowStatus.VotingSessionEnded){
             setWinningProposalId();
-            changeStatus(uint (WorkflowStatus.VotesTallied));
         }
     }
 
@@ -205,7 +190,7 @@ contract Voting is Ownable {
 
 
     function setWinningProposalId() private  onlyOwner{
-        require(currentState == WorkflowStatus.VotesTallied, "Current State must be VotesTallied, please end session or start a new one");
+        require(currentState == WorkflowStatus.VotingSessionEnded , "Current State must be VotingSessionEnded!");
         if(winningProposalId > 0){
             revert("The winningProposalId has already been set, you can start a new session");
         }
@@ -221,5 +206,6 @@ contract Voting is Ownable {
         }else{
             revert("No proposal was found for this session");
         }
+        processForward();
     }
 }
