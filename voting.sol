@@ -161,7 +161,6 @@ contract Voting is Ownable {
         emit Voted(msg.sender, _proposalId);
     }
 
-    //ATTENTION: Arrivé au statut final, j'ai bloqué la possibilité de revenir en arrière, startNewSession() pour recommencer
     //Incrémenter le statut
     function processForward() public onlyOwner sessionOngoing {
         if (uint(currentState) >= getCountWorkflowStatus() - 1) {
@@ -188,24 +187,26 @@ contract Voting is Ownable {
     }
 
 
-
+    //Automatic call after voting ends. End of session. Start new session for new votes
     function setWinningProposalId() private  onlyOwner{
         require(currentState == WorkflowStatus.VotingSessionEnded , "Current State must be VotingSessionEnded!");
         if(winningProposalId > 0){
             revert("The winningProposalId has already been set, you can start a new session");
         }
         uint proposalLength = proposals.length;
-        if(proposalLength > 0){
-            uint highest;
-            for(uint i = 0;i < proposalLength;i++){
-                if(proposals[i].voteCount > highest) {
-                    highest = i;
-                }
-            }
-            winningProposalId=highest;
-        }else{
-            revert("No proposal was found for this session");
+        if(countVote == 0 || proposalLength == 0){
+            revert("No proposition has been voted this session. Please start a new session");
         }
+
+        uint highestCount;
+        uint highestProposal;
+        for(uint i = 0;i < proposalLength;i++){
+            if(proposals[i].voteCount > highestCount) {
+                highestCount = proposals[i].voteCount;
+                highestProposal = i;
+            }
+        }
+        winningProposalId=highestProposal;
         processForward();
     }
 }
